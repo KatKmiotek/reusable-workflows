@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+        binary_name:
+            type: string
+            required: true
+
+jobs:
+  get-version:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      version_tag: ${{ steps.get-version.outputs.version_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache cargo binaries
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+          key: ${{ runner.os }}-cargo-bins-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-edit
+        run: cargo install cargo-edit
+
+      - name: Get release version
+        id: get-version
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "v"
+          major_pattern: "(MAJOR)"
+          minor_pattern: "(MINOR)"
+          version_format: "${major}.${minor}.${patch}"
+          search_commit_body: true
+
+      - name: Update Cargo.toml version
+        run: cargo set-version ${{ steps.get-version.outputs.version }}
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add Cargo.toml
+          git add Cargo.lock
+          git commit -m "feat: bump version to ${{ steps.get-version.outputs.version }}"
+          git push
+
+  create-release:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            extension: .exe
+            runner: windows-latest
+          - target: x86_64-apple-darwin
+            extension: .zip
+            runner: macos-latest
+
+    runs-on: ${{ matrix.runner }}
+    needs: [get-version]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Zip file
+        if: ${{ matrix.runner == 'macos-latest'}}
+        run: |
+          cd target/${{ matrix.target }}/release
+          zip -j ${{ inputs.binary_name }}${{ matrix.extension }} ${{ inputs.binary_name }}
+
+
+      - name: Create release and upload binary
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get-version.outputs.version_tag }}
+          name: Release ${{ needs.get-version.outputs.version_tag }}
+          files: |
+            target/${{ matrix.target }}/release/${{ inputs.binary_name }}${{ matrix.extension }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
