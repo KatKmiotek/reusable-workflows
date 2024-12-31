@@ -14,6 +14,7 @@ jobs:
           fetch-depth: 0
 
       - name: Get release version
+        id: version
         uses: paulhatch/semantic-version@v5.4.0
         with:
           tag_prefix: "v"
@@ -21,3 +22,12 @@ jobs:
           minor_pattern: "(MINOR)"
           version_format: "${major}.${minor}.${patch}"
           search_commit_body: true
+
+      - name: Create release and upload binary
+        uses: softprops/action-gh-release@v1
+        with:
+            tag_name: ${{ steps.version.outputs.version_tag }}
+            name: Release ${{ steps.version.outputs.version_tag }}
+            generate_release_notes: true
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
