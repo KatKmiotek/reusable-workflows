@@ -3,3 +3,7 @@
 ### Github
 - Rust Pull Request - includes pre-commit, formatting, tests
 - Rust Release - includes updating Cargo.toml version, compiling binary for Mac and Windows, creates GitHub release
+- Pre-Commit checks in the pipeline
+
+### Reference
+This project uses semantic versioning and gets tagged on merge event

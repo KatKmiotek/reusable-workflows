@@ -1,4 +1,4 @@
-name: Pull request checks for workflows
+name: Pre-commit checks
 
 on:
     pull_request:
