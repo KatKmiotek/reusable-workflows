@@ -3,6 +3,7 @@ name: Pull request checks for workflows
 on:
     pull_request:
         branches: main
+    workflow_call:
 
 jobs:
     pre-commit:
