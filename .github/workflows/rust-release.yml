@@ -12,6 +12,7 @@ on:
         bypass:
             type: boolean
             required: false
+            default: false
 
 jobs:
   get-version:
@@ -22,13 +23,13 @@ jobs:
       version_tag: ${{ steps.get-version.outputs.version_tag }}
     steps:
       - uses: actions/checkout@v4
-        if: ${{ inputs.bypass }}
+        if: ${{ inputs.bypass == true }}
         with:
           fetch-depth: 0
           ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - uses: actions/checkout@v4
-        if: ${{ inputs.bypass != 'true' }}
+        if: ${{ inputs.bypass != true }}
         with:
           fetch-depth: 0
 
