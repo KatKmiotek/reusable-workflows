@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   get-version:
-    if: github.actor != 'github-actions[bot]' && ${{ inputs.update_cargo == true }}
+    if: github.actor != 'github-actions[bot]' || ${{ inputs.update_cargo == true }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get-version.outputs.version }}
