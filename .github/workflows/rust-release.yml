@@ -9,6 +9,7 @@ on:
         release_version:
             type: string
             required: false
+
         update_cargo:
             type: boolean
             required: false
@@ -19,7 +20,7 @@ permissions:
 
 jobs:
   get-version:
-    if: ${{ github.actor != 'github-actions[bot]' || inputs.update_cargo == true }}
+    if: ${{ inputs.update_cargo == true }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get-version.outputs.version }}
@@ -74,7 +75,6 @@ jobs:
             runner: macos-latest
 
     runs-on: ${{ matrix.runner }}
-    needs: [get-version]
     steps:
       - uses: actions/checkout@v4
 
@@ -96,8 +96,8 @@ jobs:
       - name: Create release and upload binary
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ inputs.release_version || needs.get-version.outputs.version_tag }}
-          name: Release ${{ inputs.release_version || needs.get-version.outputs.version_tag }}
+          tag_name: ${{ inputs.release_version }}
+          name: Release ${{ inputs.release_version }}
           files: |
             target/${{ matrix.target }}/release/${{ inputs.binary_name }}${{ matrix.extension }}
           draft: false
