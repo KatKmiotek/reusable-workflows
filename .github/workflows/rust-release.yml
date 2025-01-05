@@ -9,7 +9,7 @@ on:
         release_version:
             type: string
             required: false
-        bypass:
+        update_cargo:
             type: boolean
             required: false
             default: false
@@ -19,20 +19,13 @@ permissions:
 
 jobs:
   get-version:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && ${{ inputs.update_cargo == true }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get-version.outputs.version }}
       version_tag: ${{ steps.get-version.outputs.version_tag }}
     steps:
       - uses: actions/checkout@v4
-        if: ${{ inputs.bypass == true }}
-        with:
-          fetch-depth: 0
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
-
-      - uses: actions/checkout@v4
-        if: ${{ inputs.bypass != true }}
         with:
           fetch-depth: 0
 
