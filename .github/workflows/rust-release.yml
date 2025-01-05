@@ -6,6 +6,9 @@ on:
         binary_name:
             type: string
             required: true
+        release_version:
+            type: string
+            required: false
 
 jobs:
   get-version:
@@ -30,6 +33,7 @@ jobs:
         run: cargo install cargo-edit
 
       - name: Get release version
+        if: ${{ !inputs.release_version }}
         id: get-version
         uses: paulhatch/semantic-version@v5.4.0
         with:
@@ -40,7 +44,7 @@ jobs:
           search_commit_body: true
 
       - name: Update Cargo.toml version
-        run: cargo set-version ${{ steps.get-version.outputs.version }}
+        run: cargo set-version ${{ inputs.release_version || steps.get-version.outputs.version }}
 
       - name: Commit version update
         run: |
@@ -48,7 +52,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add Cargo.toml
           git add Cargo.lock
-          git commit -m "feat: bump version to ${{ steps.get-version.outputs.version }}"
+          git commit -m "feat: bump version to ${{ inputs.release_version || steps.get-version.outputs.version }}"
           git push
 
   create-release:
@@ -85,8 +89,8 @@ jobs:
       - name: Create release and upload binary
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ needs.get-version.outputs.version_tag }}
-          name: Release ${{ needs.get-version.outputs.version_tag }}
+          tag_name: ${{ inputs.release_version || needs.get-version.outputs.version_tag }}
+          name: Release ${{ inputs.release_version || needs.get-version.outputs.version_tag }}
           files: |
             target/${{ matrix.target }}/release/${{ inputs.binary_name }}${{ matrix.extension }}
           draft: false
